@@ -1,0 +1,38 @@
+const express = require('express');
+const authMiddleware = require('../middelwares/auth.middleware');
+const interviewController = require('../controllers/interview.controller');
+const upload = require('../middelwares/file.middleware');
+
+
+const interviewRouter = express.Router();
+
+/**
+ * @route POST /api/interview
+ * @desc  generate a new interview report on the basis of user self description, resume pdf and job 
+ * @access Private
+ */
+interviewRouter.post("/", authMiddleware.authUser, upload.single('resume'), interviewController.generateInterviewReportController)
+ 
+
+/**
+ * @route GET /api/interview/report/:interviewId
+ * @description get interview report by interviewId.
+ * @access private
+ */
+interviewRouter.get("/report/:interviewId", authMiddleware.authUser, interviewController.getInterviewReportByIdController)
+
+
+/**
+ * @route GET /api/interview/
+ * @description get all interview reports of logged in user.
+ * @access private
+ */
+interviewRouter.get("/", authMiddleware.authUser, interviewController.getAllInterviewReportsController)
+
+/**
+ * @route GET /api/interview/resume/pdf
+ * @description generate resume pdf from user self description, resume and job description.
+ * @access private
+ */
+interviewRouter.post("/resume/pdf/:interviewReportId", authMiddleware.authUser, interviewController.generateResumePdfController)
+module.exports = interviewRouter; 
