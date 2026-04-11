@@ -27,7 +27,7 @@ export const useInterview = () => {
             setLoading(false)
         }
 
-        return response.interviewReport
+        return response?.interviewReport ?? null
     }
 
     const getReportById = async (interviewId) => {
@@ -41,7 +41,7 @@ export const useInterview = () => {
         } finally {
             setLoading(false)
         }
-        return response.interviewReport
+        return response?.interviewReport ?? null
     }
 
     const getReports = async () => {
@@ -64,7 +64,7 @@ export const useInterview = () => {
         let response = null
         try {
             response = await generateResumePdf({ interviewReportId })
-            const url = window.URL.createObjectURL(new Blob([ response ], { type: "application/pdf" }))
+            const url = window.URL.createObjectURL(new Blob([response], { type: "application/pdf" }))
             const link = document.createElement("a")
             link.href = url
             link.setAttribute("download", `resume_${interviewReportId}.pdf`)
@@ -84,8 +84,8 @@ export const useInterview = () => {
         } else {
             getReports()
         }
-    }, [ interviewId ])
-    
+    }, [interviewId])
+
     return { loading, report, reports, generateReport, getReportById, getReports, getResumePdf }
 
 }
