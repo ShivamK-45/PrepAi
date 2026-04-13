@@ -7,6 +7,9 @@
     padding-block: 0.75rem;
     border-radius: 1rem;
     cursor: pointer;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
 
     transition: all 0.3s ease-in-out;
 
@@ -15,7 +18,30 @@
         color: white;
     }
 
+    &.danger-button{
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        background-color: rgba(#ff4d4d, 0.08);
+        color: #ff6b6b;
+        border: 1px solid rgba(#ff4d4d, 0.25);
+
+        &:hover{
+            background-color: rgba(#ff4d4d, 0.18);
+            color: #ff4d4d;
+            border-color: rgba(#ff4d4d, 0.5);
+        }
+    }
+
     &:active{
         transform: scale(0.9);
     }
+}
+
+// Fixed top-right logout placement
+.logout-fixed {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.5rem;
+    z-index: 1000;
 }

@@ -59,3 +59,12 @@ export const generateResumePdf = async ({ interviewReportId }) => {
 
     return response.data
 }
+
+
+/**
+ * @description Service to logout the current user by clearing the token cookie and blacklisting the token.
+ */
+export const logoutUser = async () => {
+    const response = await api.get("/api/auth/logout")
+    return response.data
+}
