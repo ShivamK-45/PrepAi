@@ -4,6 +4,8 @@ import { useInterview } from '../hooks/useinterview.js'
 import { useNavigate } from 'react-router'
 import { logoutUser } from '../services/interview.api.js'
 
+
+
 const Home = () => {
 
     const { loading, generateReport, reports } = useInterview()
@@ -38,43 +40,6 @@ const Home = () => {
         }
     }
 
-
-    //     const handleGenerateReport = async () => {
-    //     const resumeFile = resumeInputRef.current.files[0];
-
-    //     // ✅ Validation
-    //     if (!resumeFile && !selfDescription) {
-    //         alert("Please upload a resume or enter self description");
-    //         return;
-    //     }
-
-    //     const data = await generateReport({
-    //         jobDescription,
-    //         selfDescription,
-    //         resumeFile
-    //     });
-
-    //     navigate(`/interview/${data._id}`);
-    // };
-
-
-    // const handleGenerateReport = async () => {
-    // const resumeFile = resumeInputRef.current.files[0];
-
-    // // 🔴 STOP REQUEST IF NO FILE + NO DESCRIPTION
-    // if (!resumeFile && !selfDescription) {
-    //     alert("Please upload resume or enter description");
-    //     return;
-    // }
-
-    // const data = await generateReport({
-    //     jobDescription,
-    //     selfDescription,
-    //     resumeFile
-    // });
-
-    // navigate(`/interview/${data._id}`);
-    // };
 
     if (loading) {
         return (

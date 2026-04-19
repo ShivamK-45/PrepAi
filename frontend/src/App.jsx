@@ -8,7 +8,7 @@ import { InterviewProvider } from "./features/interview/interview.context.jsx"
 function App() {
 
   return (
-    <AuthProvider>
+    <AuthProvider> 
       <InterviewProvider>
         <RouterProvider router={router} />
       </InterviewProvider>
