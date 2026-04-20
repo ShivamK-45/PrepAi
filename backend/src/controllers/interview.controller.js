@@ -5,56 +5,6 @@ const interviewReportModel = require('../models/interviewReport.model');
 /**
  * @description Controller to generate interview report based on user self description, resume and job description.
  */
-
-// async function generateInterviewReportController(req, res) {
-//     try {
-//         let resumeText = "";
-
-//         // ✅ If file exists, parse it
-//         if (req.file) {
-//             const resumeContent = await new pdfParse.PDFParse(
-//                 Uint8Array.from(req.file.buffer)
-//             ).getText();
-
-//             resumeText = resumeContent.text;
-//         }
-
-//         const { selfDescription, jobDescription } = req.body;
-
-//         // ❌ If both missing → reject
-//         if (!resumeText && !selfDescription) {
-//             return res.status(400).json({
-//                 message: "Resume or self description is required"
-//             });
-//         }
-
-//         const interviewReportByAi = await generateInterviewReport({
-//             resume: resumeText,
-//             selfDescription,
-//             jobDescription
-//         });
-
-//         const interviewReport = await interviewReportModel.create({
-//             user: req.user.id,
-//             resume: resumeText,
-//             selfDescription,
-//             jobDescription,
-//             ...interviewReportByAi
-//         });
-
-//         res.status(201).json({
-//             message: "Interview report generated successfully",
-//             interviewReport
-//         });
-
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({
-//             message: "Server Error"
-//         });
-//     }
-// }
-
 async function generateInterviewReportController(req, res) {
     try {
         let resumeText = "";

@@ -113,7 +113,7 @@ const interviewReportSchema = new mongoose.Schema({
     matchScore: {
         type: Number,
         min: 0,
-        max: 100,
+        max: 100, 
     },
 
     technicalQuestions: [ technicalQuestionSchema ],
@@ -127,6 +127,11 @@ const interviewReportSchema = new mongoose.Schema({
     title: {
         type: String,
         required: [ true, "Job title is required" ]
+    },
+    type: {
+        type: String,
+        enum: ["preparation", "mock"],
+        default: "preparation"
     }
 }, {
     timestamps: true
