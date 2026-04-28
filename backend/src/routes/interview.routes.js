@@ -2,11 +2,11 @@ const express = require('express');
 const authMiddleware = require('../middelwares/auth.middleware');
 const interviewController = require('../controllers/interview.controller');
 const upload = require('../middelwares/file.middleware');
-
+ 
 
 const interviewRouter = express.Router();
 
-/**
+/** 
  * @route POST /api/interview
  * @desc  generate a new interview report on the basis of user self description, resume pdf and job 
  * @access Private

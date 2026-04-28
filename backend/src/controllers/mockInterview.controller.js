@@ -1,6 +1,6 @@
 const { PDFParse } = require('pdf-parse');
 const mockInterviewSessionModel = require('../models/mockInterviewSession.model');
-const { generateMockInterviewQuestions, evaluateMockAnswer, generateFinalFeedback } = require('../services/ai.service');
+const { generateMockInterviewQuestions, evaluateAllAnswers, generateFinalFeedback } = require('../services/ai.service');
 
 /**
  * @description Controller to initialize a mock interview session
@@ -74,11 +74,108 @@ async function initializeMockInterviewController(req, res) {
     }
 }
 
+// /**
+//  * @description Controller to evaluate user's answer to a question
+//  * Analyzes transcript, calculates scores, provides feedback
+//  */
+// async function evaluateAnswerController(req, res) {
+//     try {
+//         const { sessionId, questionIndex, transcript, duration } = req.body;
+
+//         // Validate inputs
+//         if (!sessionId || questionIndex === undefined || !transcript) {
+//             return res.status(400).json({
+//                 message: "Session ID, question index, and transcript are required"
+//             });
+//         }
+
+//         // Fetch session
+//         const session = await mockInterviewSessionModel.findOne({
+//             _id: sessionId,
+//             userId: req.user.id
+//         });
+
+//         if (!session) {
+//             return res.status(404).json({
+//                 message: "Mock interview session not found"
+//             });
+//         }
+
+//         // Get the question being answered
+//         const question = session.questions[questionIndex];
+//         if (!question) {
+//             return res.status(400).json({
+//                 message: "Invalid question index"
+//             });
+//         }
+
+//         // Calculate speaking metrics
+//         const wordCount = transcript.trim().split(/\s+/).length;
+//         const speakingPace = duration > 0 ? Math.round((wordCount / duration) * 60) : 0;
+
+//         // Count filler words (um, uh, like, you know, actually, basically, etc.)
+//         const fillerWords = ['um', 'uh', 'like', 'you know', 'actually', 'basically', 'literally', 'sort of', 'kind of'];
+//         const fillerWordCount = fillerWords.reduce((count, word) => {
+//             const regex = new RegExp(`\\b${word}\\b`, 'gi');
+//             return count + (transcript.match(regex) || []).length;
+//         }, 0);
+
+//         // Evaluate answer using AI
+//         const evaluation = await evaluateMockAnswer({
+//             question: question.questionText,
+//             category: question.category,
+//             answer: transcript,
+//             resume: session.resume,
+//             jobRole: session.jobRole
+//         });
+
+//         // Create answer object
+//         const answer = {
+//             questionIndex,
+//             transcript,
+//             duration: duration || 0,
+//             wordCount,
+//             fillerWordCount,
+//             speakingPace,
+//             scores: evaluation.scores,
+//             aiFeedback: evaluation.feedback
+//         };
+
+//         // Add answer to session
+//         session.answers.push(answer);
+//         await session.save();
+
+//         // Determine next question
+//         const nextQuestionIndex = questionIndex + 1;
+//         const nextQuestion = session.questions[nextQuestionIndex] || null;
+
+//         res.status(200).json({
+//             message: "Answer evaluated successfully",
+//             scores: evaluation.scores,
+//             feedback: evaluation.feedback,
+//             nextQuestion: nextQuestion ? {
+//                 index: nextQuestionIndex,
+//                 question: nextQuestion.questionText,
+//                 category: nextQuestion.category
+//             } : null,
+//             isComplete: !nextQuestion
+//         });
+
+//     } catch (error) {
+//         console.error("Error evaluating answer:", error);
+//         res.status(500).json({
+//             message: "Server Error",
+//             error: error.message
+//         });
+//     }
+// }
+
+
 /**
- * @description Controller to evaluate user's answer to a question
- * Analyzes transcript, calculates scores, provides feedback
+ * @description Controller to save user's answer (no scoring yet)
+ * Just stores transcript and moves to next question
  */
-async function evaluateAnswerController(req, res) {
+async function saveAnswerController(req, res) {
     try {
         const { sessionId, questionIndex, transcript, duration } = req.body;
 
@@ -101,35 +198,18 @@ async function evaluateAnswerController(req, res) {
             });
         }
 
-        // Get the question being answered
-        const question = session.questions[questionIndex];
-        if (!question) {
-            return res.status(400).json({
-                message: "Invalid question index"
-            });
-        }
-
-        // Calculate speaking metrics
+        // Calculate basic metrics only (no AI evaluation)
         const wordCount = transcript.trim().split(/\s+/).length;
         const speakingPace = duration > 0 ? Math.round((wordCount / duration) * 60) : 0;
 
-        // Count filler words (um, uh, like, you know, actually, basically, etc.)
+        // Count filler words
         const fillerWords = ['um', 'uh', 'like', 'you know', 'actually', 'basically', 'literally', 'sort of', 'kind of'];
         const fillerWordCount = fillerWords.reduce((count, word) => {
             const regex = new RegExp(`\\b${word}\\b`, 'gi');
             return count + (transcript.match(regex) || []).length;
         }, 0);
 
-        // Evaluate answer using AI
-        const evaluation = await evaluateMockAnswer({
-            question: question.questionText,
-            category: question.category,
-            answer: transcript,
-            resume: session.resume,
-            jobRole: session.jobRole
-        });
-
-        // Create answer object
+        // Save answer WITHOUT scores (will be calculated at end)
         const answer = {
             questionIndex,
             transcript,
@@ -137,22 +217,24 @@ async function evaluateAnswerController(req, res) {
             wordCount,
             fillerWordCount,
             speakingPace,
-            scores: evaluation.scores,
-            aiFeedback: evaluation.feedback
+            scores: {
+                clarity: 0,
+                technical: 0,
+                confidence: 0,
+                completeness: 0
+            },                   // Placeholder, will be filled at completion
+            aiFeedback: ""      // Will be filled at completion
         };
 
-        // Add answer to session
         session.answers.push(answer);
         await session.save();
 
-        // Determine next question
+        // Get next question
         const nextQuestionIndex = questionIndex + 1;
         const nextQuestion = session.questions[nextQuestionIndex] || null;
 
         res.status(200).json({
-            message: "Answer evaluated successfully",
-            scores: evaluation.scores,
-            feedback: evaluation.feedback,
+            message: "Answer saved successfully",
             nextQuestion: nextQuestion ? {
                 index: nextQuestionIndex,
                 question: nextQuestion.questionText,
@@ -162,13 +244,14 @@ async function evaluateAnswerController(req, res) {
         });
 
     } catch (error) {
-        console.error("Error evaluating answer:", error);
+        console.error("Error saving answer:", error);
         res.status(500).json({
             message: "Server Error",
             error: error.message
         });
     }
 }
+
 
 /**
  * @description Controller to complete mock interview session
@@ -196,14 +279,27 @@ async function completeMockInterviewController(req, res) {
             });
         }
 
-        // Calculate average scores
-        const avgScores = session.answers.reduce((acc, answer) => {
+
+        // Evaluate ALL answers using AI (batch evaluation)
+        const evaluatedAnswers = await evaluateAllAnswers({
+            questions: session.questions,
+            answers: session.answers,
+            resume: session.resume,
+            jobRole: session.jobRole
+        });
+
+        // Update session answers with scores and feedback
+        session.answers = evaluatedAnswers;
+
+        // Calculate average scores from evaluated answers
+        const avgScores = evaluatedAnswers.reduce((acc, answer) => {
             acc.clarity += answer.scores.clarity;
             acc.technical += answer.scores.technical;
             acc.confidence += answer.scores.confidence;
             acc.completeness += answer.scores.completeness;
             return acc;
         }, { clarity: 0, technical: 0, confidence: 0, completeness: 0 });
+
 
         const answerCount = session.answers.length;
         const finalScore = {
@@ -307,7 +403,7 @@ async function getAllMockSessionsController(req, res) {
 
 module.exports = {
     initializeMockInterviewController,
-    evaluateAnswerController,
+    saveAnswerController,
     completeMockInterviewController,
     getMockSessionByIdController,
     getAllMockSessionsController

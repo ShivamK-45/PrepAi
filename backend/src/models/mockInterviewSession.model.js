@@ -174,7 +174,7 @@ const mockInterviewSessionSchema = new mongoose.Schema({
         type: String,
         required: [true, "Job role is required"]
     },
-    resume: {
+    resume: { 
         type: String,
         required: [true, "Resume is required"]
     },
