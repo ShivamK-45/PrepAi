@@ -11,7 +11,7 @@ async function initializeMockInterviewController(req, res) {
         let resumeText = "";
 
         // Parse resume PDF if uploaded
-        if (req.file) {
+        if (req.file) { 
             const parser = new PDFParse({ data: req.file.buffer, verbosity: 0 });
             const resumeContent = await parser.getText();
             resumeText = resumeContent.text;
@@ -253,6 +253,99 @@ async function saveAnswerController(req, res) {
 }
 
 
+// /**
+//  * @description Controller to complete mock interview session
+//  * Calculates final scores, generates strengths/improvements, updates session status
+//  */
+// async function completeMockInterviewController(req, res) {
+//     try {
+//         const { sessionId } = req.body;
+
+//         // Fetch session
+//         const session = await mockInterviewSessionModel.findOne({
+//             _id: sessionId,
+//             userId: req.user.id
+//         });
+
+//         if (!session) {
+//             return res.status(404).json({
+//                 message: "Mock interview session not found"
+//             });
+//         }
+
+//         if (session.sessionStatus === "completed") {
+//             return res.status(400).json({
+//                 message: "Session already completed"
+//             });
+//         }
+
+
+//         // Evaluate ALL answers using AI (batch evaluation)
+//         const evaluatedAnswers = await evaluateAllAnswers({
+//             questions: session.questions,
+//             answers: session.answers,
+//             resume: session.resume,
+//             jobRole: session.jobRole
+//         });
+
+//         // Update session answers with scores and feedback
+//         session.answers = evaluatedAnswers;
+
+//         // Calculate average scores from evaluated answers
+//         const avgScores = evaluatedAnswers.reduce((acc, answer) => {
+//             acc.clarity += answer.scores.clarity;
+//             acc.technical += answer.scores.technical;
+//             acc.confidence += answer.scores.confidence;
+//             acc.completeness += answer.scores.completeness;
+//             return acc;
+//         }, { clarity: 0, technical: 0, confidence: 0, completeness: 0 });
+
+
+//         const answerCount = session.answers.length;
+//         const finalScore = {
+//             communication: Math.round((avgScores.clarity / answerCount) * 10),
+//             technical: Math.round((avgScores.technical / answerCount) * 10),
+//             confidence: Math.round((avgScores.confidence / answerCount) * 10),
+//             overall: Math.round(((avgScores.clarity + avgScores.technical + avgScores.confidence + avgScores.completeness) / (answerCount * 4)) * 10)
+//         };
+
+//         // Generate detailed feedback using AI
+//         const feedback = await generateFinalFeedback({
+//             jobRole: session.jobRole,
+//             answers: session.answers,
+//             questions: session.questions,
+//             finalScore
+//         });
+
+//         // Update session
+//         session.finalScore = finalScore;
+//         session.strengths = feedback.strengths;
+//         session.improvements = feedback.improvements;
+//         session.detailedFeedback = feedback.detailedFeedback;
+//         session.sessionStatus = "completed";
+//         session.endTime = new Date();
+//         session.totalDuration = Math.round((session.endTime - session.startTime) / 1000); // in seconds
+
+//         await session.save();
+
+//         res.status(200).json({
+//             message: "Mock interview completed successfully",
+//             finalScore,
+//             strengths: feedback.strengths,
+//             improvements: feedback.improvements,
+//             detailedFeedback: feedback.detailedFeedback
+//         });
+
+//     } catch (error) {
+//         console.error("Error completing mock interview:", error);
+//         res.status(500).json({
+//             message: "Server Error",
+//             error: error.message
+//         });
+//     }
+// }
+
+
 /**
  * @description Controller to complete mock interview session
  * Calculates final scores, generates strengths/improvements, updates session status
@@ -279,7 +372,6 @@ async function completeMockInterviewController(req, res) {
             });
         }
 
-
         // Evaluate ALL answers using AI (batch evaluation)
         const evaluatedAnswers = await evaluateAllAnswers({
             questions: session.questions,
@@ -288,20 +380,18 @@ async function completeMockInterviewController(req, res) {
             jobRole: session.jobRole
         });
 
-        // Update session answers with scores and feedback
-        session.answers = evaluatedAnswers;
-
         // Calculate average scores from evaluated answers
         const avgScores = evaluatedAnswers.reduce((acc, answer) => {
-            acc.clarity += answer.scores.clarity;
-            acc.technical += answer.scores.technical;
-            acc.confidence += answer.scores.confidence;
-            acc.completeness += answer.scores.completeness;
+            acc.clarity += answer.scores.clarity || 0;
+            acc.technical += answer.scores.technical || 0;
+            acc.confidence += answer.scores.confidence || 0;
+            acc.completeness += answer.scores.completeness || 0;
             return acc;
         }, { clarity: 0, technical: 0, confidence: 0, completeness: 0 });
 
-
-        const answerCount = session.answers.length;
+        const answerCount = evaluatedAnswers.length;
+        
+        // Calculate final score (convert 0-10 scale to 0-100)
         const finalScore = {
             communication: Math.round((avgScores.clarity / answerCount) * 10),
             technical: Math.round((avgScores.technical / answerCount) * 10),
@@ -312,19 +402,20 @@ async function completeMockInterviewController(req, res) {
         // Generate detailed feedback using AI
         const feedback = await generateFinalFeedback({
             jobRole: session.jobRole,
-            answers: session.answers,
+            answers: evaluatedAnswers,
             questions: session.questions,
             finalScore
         });
 
-        // Update session
+        // Update session with evaluated answers
+        session.answers = evaluatedAnswers;
         session.finalScore = finalScore;
         session.strengths = feedback.strengths;
         session.improvements = feedback.improvements;
         session.detailedFeedback = feedback.detailedFeedback;
         session.sessionStatus = "completed";
         session.endTime = new Date();
-        session.totalDuration = Math.round((session.endTime - session.startTime) / 1000); // in seconds
+        session.totalDuration = Math.round((session.endTime - session.startTime) / 1000);
 
         await session.save();
 
@@ -344,6 +435,8 @@ async function completeMockInterviewController(req, res) {
         });
     }
 }
+
+
 
 /**
  * @description Controller to get mock interview session by ID

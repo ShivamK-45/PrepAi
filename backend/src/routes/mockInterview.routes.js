@@ -5,7 +5,7 @@ const upload = require('../middelwares/file.middleware');
 
 const mockInterviewRouter = express.Router();
 
-/**
+/** 
  * @route POST /api/mock-interview/initialize
  * @description Initialize a new mock interview session, generate questions
  * @access Private

@@ -171,9 +171,12 @@ async function evaluateAllAnswers({ questions, answers, resume, jobRole }) {
 
     // Prepare questions and answers for AI or context for AI to evaluate
     const qaContext = answers.map((answer, index) => ({
-        questionIndex: answer.questionIndex,
-        question: questions[answer.questionIndex].questionText,
-        category: questions[answer.questionIndex].category,
+        // questionIndex: answer.questionIndex,
+        // question: questions[answer.questionIndex].questionText,
+        // category: questions[answer.questionIndex].category,
+        questionIndex: index, // NOT answer.questionIndex
+        question: questions[index]?.questionText,
+        category: questions[index]?.category,
         answer: answer.transcript,
         wordCount: answer.wordCount,
         fillerWordCount: answer.fillerWordCount,
@@ -213,14 +216,28 @@ async function evaluateAllAnswers({ questions, answers, resume, jobRole }) {
     const result = JSON.parse(response.text);
 
     // Merge evaluations back into answers
+    // return answers.map((answer, index) => {
+    //     const evaluation = result.evaluations.find(e => e.questionIndex === answer.questionIndex);
+    //     return {
+    //         ...answer,
+    //         scores: evaluation.scores,
+    //         aiFeedback: evaluation.feedback
+    //     };
+    // });
     return answers.map((answer, index) => {
-        const evaluation = result.evaluations.find(e => e.questionIndex === answer.questionIndex);
-        return {
-            ...answer,
-            scores: evaluation.scores,
-            aiFeedback: evaluation.feedback
-        };
-    });
+    const evaluation = result.evaluations[index];
+
+    return {
+        ...answer,
+        scores: evaluation?.scores || {
+            clarity: 5,
+            technical: 5,
+            confidence: 5,
+            completeness: 5
+        },
+        aiFeedback: evaluation?.feedback || "No feedback generated"
+    };
+});
 }
 
 
@@ -236,14 +253,26 @@ async function generateFinalFeedback({ jobRole, answers, questions, finalScore }
     });
 
     // Prepare context
-    const performanceContext = answers.map((answer, index) => ({
-        question: questions[answer.questionIndex].questionText,
-        category: questions[answer.questionIndex].category,
+    // const performanceContext = answers.map((answer, index) => ({
+    //     question: questions[answer.questionIndex].questionText,
+    //     category: questions[answer.questionIndex].category,
+    //     scores: answer.scores,
+    //     feedback: answer.aiFeedback,
+    //     fillerWordCount: answer.fillerWordCount,
+    //     speakingPace: answer.speakingPace
+    // }));
+    const performanceContext = answers.map((answer, index) => {
+    const question = questions[index]; // use index, not questionIndex
+
+    return {
+        question: question?.questionText || "Unknown question",
+        category: question?.category || "unknown",
         scores: answer.scores,
         feedback: answer.aiFeedback,
         fillerWordCount: answer.fillerWordCount,
         speakingPace: answer.speakingPace
-    }));
+    };
+});
 
     const prompt = `You are providing final feedback for a ${jobRole} mock interview.
                     

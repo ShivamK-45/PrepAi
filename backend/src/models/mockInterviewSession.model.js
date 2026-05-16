@@ -71,25 +71,25 @@ const answerScoresSchema = new mongoose.Schema({
         type: Number,
         min: 0,
         max: 10,
-        required: [true, "Clarity score is required"]
+        required: false
     },
     technical: {
         type: Number,
         min: 0,
         max: 10,
-        required: [true, "Technical score is required"]
+        required: false
     },
     confidence: {
         type: Number,
         min: 0,
         max: 10,
-        required: [true, "Confidence score is required"]
+        required: false
     },
     completeness: {
         type: Number,
         min: 0,
         max: 10,
-        required: [true, "Completeness score is required"]
+        required: false
     }
 }, {
     _id: false
@@ -124,7 +124,7 @@ const answerSchema = new mongoose.Schema({
     scores: answerScoresSchema,
     aiFeedback: {
         type: String,
-        required: [true, "AI feedback is required"]
+        required: false
     }
 }, {
     _id: false
