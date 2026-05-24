@@ -1,6 +1,8 @@
 const { PDFParse } = require('pdf-parse');
 const mockInterviewSessionModel = require('../models/mockInterviewSession.model');
 const { generateMockInterviewQuestions, evaluateAllAnswers, generateFinalFeedback } = require('../services/ai.service');
+const { generateSpeech } = require('../services/tts.service');
+
 
 /**
  * @description Controller to initialize a mock interview session
@@ -58,11 +60,28 @@ async function initializeMockInterviewController(req, res) {
             startTime: new Date()
         });
 
+        // res.status(201).json({
+        //     message: "Mock interview session initialized successfully",
+        //     sessionId: mockSession._id,
+        //     questions: questions,
+        //     firstQuestion: questions[0]
+        // });
+
+        // Generate audio for first question
+        const firstQuestionAudio = await generateSpeech(questions[0].question);
+
         res.status(201).json({
             message: "Mock interview session initialized successfully",
             sessionId: mockSession._id,
-            questions: questions,
-            firstQuestion: questions[0]
+            questions: questions.map((q, index) => ({
+                question: q.question,
+                category: q.category
+            })),
+            firstQuestion: {
+                question: questions[0].question,
+                category: questions[0].category,
+                audio: firstQuestionAudio // base64 encoded MP3
+            }
         });
 
     } catch (error) {
@@ -233,13 +252,33 @@ async function saveAnswerController(req, res) {
         const nextQuestionIndex = questionIndex + 1;
         const nextQuestion = session.questions[nextQuestionIndex] || null;
 
-        res.status(200).json({
-            message: "Answer saved successfully",
-            nextQuestion: nextQuestion ? {
+        // res.status(200).json({
+        //     message: "Answer saved successfully",
+        //     nextQuestion: nextQuestion ? {
+        //         index: nextQuestionIndex,
+        //         question: nextQuestion.questionText,
+        //         category: nextQuestion.category
+        //     } : null,
+        //     isComplete: !nextQuestion
+        // });
+
+
+
+        // Generate audio for next question if exists
+        let nextQuestionData = null;
+        if (nextQuestion) {
+            const nextQuestionAudio = await generateSpeech(nextQuestion.questionText);
+            nextQuestionData = {
                 index: nextQuestionIndex,
                 question: nextQuestion.questionText,
-                category: nextQuestion.category
-            } : null,
+                category: nextQuestion.category,
+                audio: nextQuestionAudio // base64 encoded MP3
+            };
+        }
+
+        res.status(200).json({
+            message: "Answer saved successfully",
+            nextQuestion: nextQuestionData,
             isComplete: !nextQuestion
         });
 

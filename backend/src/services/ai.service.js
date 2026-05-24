@@ -2,6 +2,29 @@ const { GoogleGenAI } = require("@google/genai");
 const { z } = require("zod");
 const puppeteer = require("puppeteer");
 
+/**
+ * Retry helper for Gemini API calls
+ */
+async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            const is503Error = error.status === 503 || 
+                              error.message?.includes('high demand') ||
+                              error.message?.includes('UNAVAILABLE');
+            
+            if (!is503Error || attempt === maxRetries) {
+                throw error; // Rethrow if not 503 or last attempt
+            }
+            
+            const delay = initialDelay * Math.pow(2, attempt - 1); // Exponential backoff
+            console.log(`Gemini API unavailable (attempt ${attempt}/${maxRetries}). Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
@@ -38,14 +61,25 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
                         Self Description: ${selfDescription}
                         Job Description: ${jobDescription}`
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: z.toJSONSchema(interviewReportSchema),
-        }
-    })
+    // const response = await ai.models.generateContent({
+    //     model: "gemini-3-flash-preview",
+    //     contents: prompt,
+    //     config: {
+    //         responseMimeType: "application/json",
+    //         responseSchema: z.toJSONSchema(interviewReportSchema),
+    //     }
+    // })
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: z.toJSONSchema(interviewReportSchema),
+            }
+        });
+    });
 
     return JSON.parse(response.text)
 }
@@ -137,14 +171,26 @@ async function generateMockInterviewQuestions({ resume, jobRole, jobDescription,
                     
                     Make questions conversational and realistic, like a real interviewer would ask.`;
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: z.toJSONSchema(mockQuestionsSchema),
-        }
+    // const response = await ai.models.generateContent({
+    //     model: "gemini-3-flash-preview",
+    //     contents: prompt,
+    //     config: {
+    //         responseMimeType: "application/json",
+    //         responseSchema: z.toJSONSchema(mockQuestionsSchema),
+    //     }
+    // });
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+                config: {
+                responseMimeType: "application/json",
+                responseSchema: z.toJSONSchema(mockQuestionsSchema),
+            }
+        });
     });
+
 
     const result = JSON.parse(response.text);
     return result.questions;
@@ -204,13 +250,24 @@ async function evaluateAllAnswers({ questions, answers, resume, jobRole }) {
                     
                     Be fair but honest. Score based on the job role expectations.`;
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: z.toJSONSchema(evaluationSchema),
-        }
+    // const response = await ai.models.generateContent({
+    //     model: "gemini-3-flash-preview",
+    //     contents: prompt,
+    //     config: {
+    //         responseMimeType: "application/json",
+    //         responseSchema: z.toJSONSchema(evaluationSchema),
+    //     }
+    // });
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: z.toJSONSchema(evaluationSchema),
+            }
+        });
     });
 
     const result = JSON.parse(response.text);
@@ -301,13 +358,25 @@ async function generateFinalFeedback({ jobRole, answers, questions, finalScore }
                     
                     Be encouraging but honest. Focus on helping them succeed in real interviews.`;
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: z.toJSONSchema(feedbackSchema),
-        }
+
+    // const response = await ai.models.generateContent({
+    //     model: "gemini-3-flash-preview",
+    //     contents: prompt,
+    //     config: {
+    //         responseMimeType: "application/json",
+    //         responseSchema: z.toJSONSchema(feedbackSchema),
+    //     }
+    // });
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: z.toJSONSchema(feedbackSchema),
+            }
+        });
     });
 
     return JSON.parse(response.text);

@@ -23,11 +23,14 @@ export default App;
 // import React from 'react';
 // import { BrowserRouter } from 'react-router';
 // import Sidebar from './components/layout/Sidebar';
+// import MockSetup from './features/mockInterview/pages/MockSetup';
+// import LiveInterview from './features/mockInterview/pages/LiveInterview';
+// import MockResults from './features/mockInterview/pages/MockResults';
 
 // function App() {
 //   return (
 //     <BrowserRouter>
-//       <Sidebar />
+//       <MockResults />
 //     </BrowserRouter>
 //   );
 // }
