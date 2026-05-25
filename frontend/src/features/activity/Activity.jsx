@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { getAllInterviewReportsController } from '../interview/services/interview.api';
+import { getAllInterviewReports } from '../interview/services/interview.api';
 import { getMockSessionById } from '../mockInterview/services/mockInterview.api';
 import './activity.scss';
 

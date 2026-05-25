@@ -125,15 +125,25 @@ const LiveInterview = () => {
 
     // Complete interview
     const handleCompleteInterview = async () => {
-        setStatus('processing');
-        
-        try {
-            await handleComplete(sessionId);
-            navigate(`/mock-results/${sessionId}`);
-        } catch (err) {
-            console.error('Error completing interview:', err);
-            alert('Failed to complete interview. Please try again.');
-        }
+    setStatus('processing');
+    
+    // Check if any answers exist
+    if (!sessionId) {
+        alert('Session not found');
+        navigate('/');
+        return;
+    }
+    
+    try {
+        console.log('Completing interview with sessionId:', sessionId);
+        const result = await handleComplete(sessionId);
+        console.log('Interview completed:', result);
+        navigate(`/mock-results/${sessionId}`);
+    } catch (err) {
+        console.error('Error completing interview:', err);
+        alert(`Failed to complete interview: ${err.message}. Redirecting to dashboard...`);
+        navigate('/');
+    }
     };
 
     // End interview early

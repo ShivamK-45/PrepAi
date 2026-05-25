@@ -10,6 +10,7 @@ import Interview from "./features/interview/pages/Interview";
 import MockSetup from "./features/mockInterview/pages/MockSetup";
 import LiveInterview from "./features/mockInterview/pages/LiveInterview";
 import MockResults from "./features/mockInterview/pages/MockResults";
+import Activity from "./features/activity/Activity";
 
 export const router = createBrowserRouter([
     { 
@@ -78,5 +79,14 @@ export const router = createBrowserRouter([
             </Protected>
         )
     },
-    
+    {
+        path: "/activity",
+        element: (
+            <Protected>
+                <Layout>
+                    <Activity />
+                </Layout>
+            </Protected>
+        )
+    }
 ]);
