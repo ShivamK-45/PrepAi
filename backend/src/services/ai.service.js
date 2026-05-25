@@ -2,6 +2,29 @@ const { GoogleGenAI } = require("@google/genai");
 const { z } = require("zod");
 const puppeteer = require("puppeteer");
 
+/**
+ * Retry helper for Gemini API calls
+ */
+async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            const is503Error = error.status === 503 || 
+                              error.message?.includes('high demand') ||
+                              error.message?.includes('UNAVAILABLE');
+            
+            if (!is503Error || attempt === maxRetries) {
+                throw error; // Rethrow if not 503 or last attempt
+            }
+            
+            const delay = initialDelay * Math.pow(2, attempt - 1); // Exponential backoff
+            console.log(`Gemini API unavailable (attempt ${attempt}/${maxRetries}). Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
@@ -38,14 +61,25 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
                         Self Description: ${selfDescription}
                         Job Description: ${jobDescription}`
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: z.toJSONSchema(interviewReportSchema),
-        }
-    })
+    // const response = await ai.models.generateContent({
+    //     model: "gemini-3-flash-preview",
+    //     contents: prompt,
+    //     config: {
+    //         responseMimeType: "application/json",
+    //         responseSchema: z.toJSONSchema(interviewReportSchema),
+    //     }
+    // })
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: z.toJSONSchema(interviewReportSchema),
+            }
+        });
+    });
 
     return JSON.parse(response.text)
 }
@@ -108,7 +142,252 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
 }
 
 
+/**
+ * Generate interview questions based on resume and job role
+ */
+async function generateMockInterviewQuestions({ resume, jobRole, jobDescription, questionCount }) {
+    const mockQuestionsSchema = z.object({
+        questions: z.array(z.object({
+            question: z.string().describe("The interview question to ask the candidate"),
+            category: z.enum(["technical", "behavioral", "project"]).describe("The category of the question")
+        }))
+    });
+
+    const prompt = `You are conducting a mock interview for a ${jobRole} position.
+                    
+                    Candidate's Resume: ${resume}
+                    ${jobDescription ? `Job Description: ${jobDescription}` : ''}
+                    
+                    Generate exactly ${questionCount} interview questions that:
+                    1. Are specific to the candidate's resume and projects
+                    2. Mix technical, behavioral, and project-based questions
+                    3. Progress from easier to harder
+                    4. Test both technical knowledge and communication skills
+                    
+                    Question distribution:
+                    - ${Math.floor(questionCount * 0.5)} technical questions (about skills, technologies, concepts)
+                    - ${Math.floor(questionCount * 0.3)} project-based questions (about specific projects in resume)
+                    - ${Math.ceil(questionCount * 0.2)} behavioral questions (problem-solving, teamwork, challenges)
+                    
+                    Make questions conversational and realistic, like a real interviewer would ask.`;
+
+    // const response = await ai.models.generateContent({
+    //     model: "gemini-3-flash-preview",
+    //     contents: prompt,
+    //     config: {
+    //         responseMimeType: "application/json",
+    //         responseSchema: z.toJSONSchema(mockQuestionsSchema),
+    //     }
+    // });
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+                config: {
+                responseMimeType: "application/json",
+                responseSchema: z.toJSONSchema(mockQuestionsSchema),
+            }
+        });
+    });
+
+
+    const result = JSON.parse(response.text);
+    return result.questions;
+}
+
+
+
+/**
+ * Evaluate all answers at once after interview completion
+ */
+async function evaluateAllAnswers({ questions, answers, resume, jobRole }) {
+    const evaluationSchema = z.object({
+        evaluations: z.array(z.object({
+            questionIndex: z.number().describe("The index of the question being evaluated"),
+            scores: z.object({
+                clarity: z.number().min(0).max(10).describe("How clear and articulate the answer was (0-10)"),
+                technical: z.number().min(0).max(10).describe("Technical accuracy and depth of knowledge (0-10)"),
+                confidence: z.number().min(0).max(10).describe("Confidence in delivery, minimal hesitation (0-10)"),
+                completeness: z.number().min(0).max(10).describe("How thoroughly the question was answered (0-10)")
+            }),
+            feedback: z.string().describe("Brief constructive feedback on this specific answer (2-3 sentences)")
+        }))
+    });
+
+    // Prepare questions and answers for AI or context for AI to evaluate
+    const qaContext = answers.map((answer, index) => ({
+        // questionIndex: answer.questionIndex,
+        // question: questions[answer.questionIndex].questionText,
+        // category: questions[answer.questionIndex].category,
+        questionIndex: index, // NOT answer.questionIndex
+        question: questions[index]?.questionText,
+        category: questions[index]?.category,
+        answer: answer.transcript,
+        wordCount: answer.wordCount,
+        fillerWordCount: answer.fillerWordCount,
+        speakingPace: answer.speakingPace,
+        duration: answer.duration
+    }));
+
+    const prompt = `You are evaluating a mock interview for a ${jobRole} position.
+                    
+                    Candidate's Resume: ${resume}
+                    
+                    Interview Q&A:
+                    ${qaContext.map((qa, i) => `
+                    Q${i + 1} (${qa.category}): ${qa.question}
+                    Answer: ${qa.answer}
+                    Stats: ${qa.wordCount} words, ${qa.fillerWordCount} filler words, ${qa.speakingPace} WPM, ${qa.duration}s duration
+                    `).join('\n')}
+                    
+                    For each answer, provide:
+                    1. Clarity score (0-10): Communication quality, articulation, flow
+                    2. Technical score (0-10): Accuracy, depth, relevance
+                    3. Confidence score (0-10): Assertiveness, minimal hesitation, strong delivery
+                    4. Completeness score (0-10): Thoroughness, covered all aspects
+                    5. Brief feedback: 2-3 sentences of constructive criticism
+                    
+                    Be fair but honest. Score based on the job role expectations.`;
+
+    // const response = await ai.models.generateContent({
+    //     model: "gemini-3-flash-preview",
+    //     contents: prompt,
+    //     config: {
+    //         responseMimeType: "application/json",
+    //         responseSchema: z.toJSONSchema(evaluationSchema),
+    //     }
+    // });
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: z.toJSONSchema(evaluationSchema),
+            }
+        });
+    });
+
+    const result = JSON.parse(response.text);
+
+    // Merge evaluations back into answers
+    // return answers.map((answer, index) => {
+    //     const evaluation = result.evaluations.find(e => e.questionIndex === answer.questionIndex);
+    //     return {
+    //         ...answer,
+    //         scores: evaluation.scores,
+    //         aiFeedback: evaluation.feedback
+    //     };
+    // });
+    return answers.map((answer, index) => {
+    const evaluation = result.evaluations[index];
+
+    return {
+        ...answer,
+        scores: evaluation?.scores || {
+            clarity: 5,
+            technical: 5,
+            confidence: 5,
+            completeness: 5
+        },
+        aiFeedback: evaluation?.feedback || "No feedback generated"
+    };
+});
+}
+
+
+
+/**
+ * Generate overall strengths, improvements, and detailed feedback
+ */
+async function generateFinalFeedback({ jobRole, answers, questions, finalScore }) {
+    const feedbackSchema = z.object({
+        strengths: z.array(z.string()).describe("3-5 key strengths demonstrated in the interview"),
+        improvements: z.array(z.string()).describe("3-5 specific areas for improvement"),
+        detailedFeedback: z.string().describe("A comprehensive 3-4 paragraph feedback covering overall performance, communication style, technical knowledge, and actionable next steps")
+    });
+
+    // Prepare context
+    // const performanceContext = answers.map((answer, index) => ({
+    //     question: questions[answer.questionIndex].questionText,
+    //     category: questions[answer.questionIndex].category,
+    //     scores: answer.scores,
+    //     feedback: answer.aiFeedback,
+    //     fillerWordCount: answer.fillerWordCount,
+    //     speakingPace: answer.speakingPace
+    // }));
+    const performanceContext = answers.map((answer, index) => {
+    const question = questions[index]; // use index, not questionIndex
+
+    return {
+        question: question?.questionText || "Unknown question",
+        category: question?.category || "unknown",
+        scores: answer.scores,
+        feedback: answer.aiFeedback,
+        fillerWordCount: answer.fillerWordCount,
+        speakingPace: answer.speakingPace
+    };
+});
+
+    const prompt = `You are providing final feedback for a ${jobRole} mock interview.
+                    
+                    Final Scores:
+                    - Overall: ${finalScore.overall}/100
+                    - Communication: ${finalScore.communication}/100
+                    - Technical: ${finalScore.technical}/100
+                    - Confidence: ${finalScore.confidence}/100
+                    
+                    Performance per question:
+                    ${performanceContext.map((p, i) => `
+                    Q${i + 1} (${p.category}): ${p.question}
+                    Scores: Clarity ${p.scores.clarity}/10, Technical ${p.scores.technical}/10, Confidence ${p.scores.confidence}/10, Complete ${p.scores.completeness}/10
+                    Feedback: ${p.feedback}
+                    `).join('\n')}
+                    
+                    Based on this interview performance, provide:
+                    
+                    1. STRENGTHS (3-5 points): What did they do well? Be specific.
+                    2. IMPROVEMENTS (3-5 points): What needs work? Be actionable and constructive.
+                    3. DETAILED FEEDBACK (3-4 paragraphs):
+                       - Overall performance summary
+                       - Communication style analysis
+                       - Technical knowledge assessment
+                       - Specific actionable advice for improvement
+                    
+                    Be encouraging but honest. Focus on helping them succeed in real interviews.`;
+
+
+    // const response = await ai.models.generateContent({
+    //     model: "gemini-3-flash-preview",
+    //     contents: prompt,
+    //     config: {
+    //         responseMimeType: "application/json",
+    //         responseSchema: z.toJSONSchema(feedbackSchema),
+    //     }
+    // });
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: z.toJSONSchema(feedbackSchema),
+            }
+        });
+    });
+
+    return JSON.parse(response.text);
+}
+
+
+
 module.exports = {
     generateInterviewReport,
+    generateMockInterviewQuestions,
+    evaluateAllAnswers,
+    generateFinalFeedback,
     generateResumePdf
 }

@@ -1,0 +1,25 @@
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+    background-color: #0f1419;
+}
+
+.main-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 240px; // Sidebar width
+}
+
+.content-area {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+// Responsive
+@media (max-width: 768px) {
+    .main-container {
+        margin-left: 0;
+    }
+}
