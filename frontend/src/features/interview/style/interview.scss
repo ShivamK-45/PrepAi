@@ -1,13 +1,13 @@
 @use "sass:color";
 // ── Shared Variables (mirrors home.scss theme) ────────────────────────────────
-$bg-page: #0d1117;
-$bg-card: #161b22;
-$bg-panel: #1c2230;
-$bg-input: #1e2535;
-$border-color: #2a3348;
-$text-primary: #e6edf3;
-$text-muted: #7d8590;
-$accent: #ff2d78;
+$bg-page: transparent;
+$bg-card: rgba(30, 41, 59, 0.45);
+$bg-panel: rgba(15, 23, 42, 0.45);
+$bg-input: rgba(15, 23, 42, 0.3);
+$border-color: rgba(255, 255, 255, 0.08);
+$text-primary: #f1f5f9;
+$text-muted: #94a3b8;
+$accent: #ec4899;
 $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
 // severity palette
@@ -22,13 +22,13 @@ $severity-low: #3fb950;
 // ── Page Shell ────────────────────────────────────────────────────────────────
 .interview-page {
     width: 100%;
-    min-height: 100vh;
-    background-color: $bg-page;
+    margin: 0;
+    height: calc(100vh - 70px);
+    min-height: calc(100vh - 70px);
     color: $text-primary;
     font-family: $font-stack;
     display: flex;
     align-items: stretch;
-    padding: 1.5rem;
     box-sizing: border-box;
 }
 
@@ -36,12 +36,12 @@ $severity-low: #3fb950;
 .interview-layout {
     display: flex;
     width: 100%;
-    max-width: 1280px;
-    margin: 0 auto;
+    max-width: none;
     background-color: $bg-card;
-    border: 1px solid $border-color;
-    border-radius: 1rem;
+    border: none;
+    border-radius: 0;
     justify-content: space-between;
+    backdrop-filter: blur(12px);
 }
 
 .interview-divider {
@@ -120,7 +120,7 @@ $severity-low: #3fb950;
     padding: 1.75rem 2rem;
     overflow-y: auto;
     min-height: initial;
-    max-height: calc(100vh - 3rem);
+    max-height: 100%;
     padding-bottom: 5rem;
     align-items: flex-start;
 
@@ -367,6 +367,8 @@ $severity-low: #3fb950;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    overflow-y: auto;
+    max-height: 100%;
 }
 
 .sidebar-divider {

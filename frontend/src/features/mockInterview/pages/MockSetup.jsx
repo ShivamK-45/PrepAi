@@ -99,23 +99,14 @@ const MockSetup = () => {
                 <p>Please wait while we prepare your questions</p>
             </div>
         );
-    }
-
-    return (
+    }    return (
         <div className="mock-setup">
             <div className="setup-header">
-                <button className="back-button" onClick={() => navigate('/')}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="19" y1="12" x2="5" y2="12"/>
-                        <polyline points="12 19 5 12 12 5"/>
-                    </svg>
-                    Back to Dashboard
-                </button>
                 <h1>Setup Mock Interview</h1>
                 <p>Configure your AI interview session</p>
             </div>
 
-            <div className="setup-container">
+            <div className="setup-grid-2x2">
                 {/* Step 1: Upload Resume */}
                 <section className="setup-section">
                     <div className="section-header">
@@ -150,7 +141,7 @@ const MockSetup = () => {
                     </label>
                 </section>
 
-                {/* Step 2: Job Input */}
+                {/* Step 2: Job Details */}
                 <section className="setup-section">
                     <div className="section-header">
                         <span className="step-number">2</span>
@@ -248,7 +239,7 @@ const MockSetup = () => {
                     </div>
                 </section>
 
-                {/* Step 4: Microphone Test */}
+                {/* Step 4: Microphone Check */}
                 <section className="setup-section">
                     <div className="section-header">
                         <span className="step-number">4</span>
@@ -279,12 +270,14 @@ const MockSetup = () => {
                         </button>
                         <p className="mic-note">
                             {micTested 
-                                ? '✅ Your microphone is ready!' 
-                                : '⚠️ Please test your microphone before starting'}
+                                ? '✅ Microphone is ready!' 
+                                : '⚠️ Please test your microphone'}
                         </p>
                     </div>
                 </section>
+            </div>
 
+            <div className="setup-actions">
                 {/* Error Display */}
                 {error && (
                     <div className="error-message">

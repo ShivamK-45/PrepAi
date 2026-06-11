@@ -14,7 +14,7 @@ const TopNavbar = () => {
     return (
         <header className="top-navbar">
             <div className="navbar-left">
-                {/* Page title will be added later based on route */}
+                {/* Logo is now rendered in the top-left logo-container */}
             </div>
 
             <div className="navbar-right">
