@@ -5,7 +5,7 @@ import Register from "./features/auth/pages/Register";
 import Protected from "./features/auth/components/Protected";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./features/dashboard/Dashboard"; // NEW
-import Home from "./features/interview/pages/Home";
+import Preparation from "./features/interview/pages/Preparation";
 import Interview from "./features/interview/pages/Interview";
 import MockSetup from "./features/mockInterview/pages/MockSetup";
 import LiveInterview from "./features/mockInterview/pages/LiveInterview";
@@ -36,7 +36,7 @@ export const router = createBrowserRouter([
         element: (
             <Protected>
                 <Layout>
-                    <Home />
+                    <Preparation />
                 </Layout>
             </Protected>
         )

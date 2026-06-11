@@ -9,12 +9,6 @@ const Sidebar = () => {
 
     return (
         <aside className="sidebar">
-            {/* Logo Section */}
-            <div className="sidebar-header">
-                <h1 className="logo">PrepAI</h1>
-                <p className="tagline">AI DIGITAL MENTOR</p>
-            </div>
-
             {/* Navigation Links */}
             <nav className="sidebar-nav">
                 <Link 
@@ -42,8 +36,8 @@ const Sidebar = () => {
                 </Link>
 
                 <Link 
-                    to="/live-practice" 
-                    className={`nav-item ${isActive('/live-practice') ? 'active' : ''}`}
+                    to="/mock-setup" 
+                    className={`nav-item ${isActive('/mock-setup') ? 'active' : ''}`}
                 >
                     <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
