@@ -19,14 +19,15 @@ const Activity = () => {
     const fetchAllSessions = async () => {
         setLoading(true);
         try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
             // Fetch preparation sessions
-            const prepResponse = await fetch('http://localhost:3000/api/interview', {
+            const prepResponse = await fetch(`${API_URL}/api/interview`, {
                 credentials: 'include'
             });
             const prepData = await prepResponse.json();
 
             // Fetch mock interview sessions
-            const mockResponse = await fetch('http://localhost:3000/api/mock-interview/sessions', {
+            const mockResponse = await fetch(`${API_URL}/api/mock-interview/sessions`, {
                 credentials: 'include'
             });
             const mockData = await mockResponse.json();
