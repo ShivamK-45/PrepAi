@@ -11,10 +11,28 @@ app.use(cookieParser());
 //     credentials: true,
 // }))
 
+// app.use(cors({
+//     origin: ['http://localhost:5173', 'https://prep-ai-phi-three.vercel.app'],
+//     credentials: true,
+// }))
+
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://prep-ai-phi-three.vercel.app',
+    'https://prep-od6rhtkpj-shivam-kalekar-s-projects.vercel.app'
+];
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://prep-ai-phi-three.vercel.app'],
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
 }))
+
 
 // require all the routes here
 const authRouter = require('./routes/auth.routes');
