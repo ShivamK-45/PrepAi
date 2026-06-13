@@ -35,7 +35,8 @@ async function initializeMockInterviewController(req, res) {
         }
 
         // Determine number of questions based on duration
-        const questionCount = duration === 10 ? 6 : duration === 20 ? 10 : 8; // default 15 min = 8 questions
+        const parsedDuration = parseInt(duration, 10) || 15;
+        const questionCount = parsedDuration === 10 ? 6 : parsedDuration === 20 ? 10 : 8; // default 15 min = 8 questions
 
         // Generate questions using AI
         const questions = await generateMockInterviewQuestions({
