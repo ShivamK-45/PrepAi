@@ -19,12 +19,11 @@ app.use(cookieParser());
 const allowedOrigins = [
     'http://localhost:5173',
     'https://prep-ai-phi-three.vercel.app',
-    'https://prep-od6rhtkpj-shivam-kalekar-s-projects.vercel.app'
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin) || /^https:\/\/prep-ai.*\.vercel\.app$/.test(origin)) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
@@ -32,7 +31,6 @@ app.use(cors({
     },
     credentials: true,
 }))
-
 
 // require all the routes here
 const authRouter = require('./routes/auth.routes');
