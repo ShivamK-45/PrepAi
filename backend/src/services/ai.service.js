@@ -11,8 +11,10 @@ async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
             return await fn();
         } catch (error) {
             const is503Error = error.status === 503 || 
-                              error.message?.includes('high demand') ||
-                              error.message?.includes('UNAVAILABLE');
+                  error.status === 502 ||
+                  error.message?.includes('high demand') ||
+                  error.message?.includes('UNAVAILABLE') ||
+                  error.message?.includes('Bad Gateway');
             
             if (!is503Error || attempt === maxRetries) {
                 throw error; // Rethrow if not 503 or last attempt
