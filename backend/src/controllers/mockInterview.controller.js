@@ -44,7 +44,7 @@ async function initializeMockInterviewController(req, res) {
             jobRole,
             jobDescription,
             questionCount
-        });
+        }); 
 
         // Create new session in database
         const mockSession = await mockInterviewSessionModel.create({

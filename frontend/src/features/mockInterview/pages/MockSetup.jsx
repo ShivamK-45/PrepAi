@@ -127,7 +127,7 @@ const MockSetup = () => {
                         ) : (
                             <>
                                 <p className="upload-title">Click to upload or drag & drop</p>
-                                <p className="upload-subtitle">PDF or DOCX (Max 5MB)</p>
+                                <p className="upload-subtitle">PDF or DOCX (Max 3MB)</p>
                             </>
                         )}
                         <input

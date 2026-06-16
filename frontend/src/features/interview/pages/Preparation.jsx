@@ -96,7 +96,7 @@ const Preparation = () => {
                                 ) : (
                                     <>
                                         <p className='dropzone__title'>Click to upload or drag &amp; drop</p>
-                                        <p className='dropzone__subtitle'>PDF or DOCX (Max 5MB)</p>
+                                        <p className='dropzone__subtitle'>PDF or DOCX (Max 3MB)</p>
                                     </>
                                 )}
                                 <input ref={resumeInputRef} onChange={handleFileChange} hidden type='file' id='resume' name='resume' accept='.pdf,.docx' />

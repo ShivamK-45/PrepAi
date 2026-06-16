@@ -100,6 +100,7 @@ async function generatePdfFromHtml(htmlContent) {
             '--single-process',
          ]
     })
+    try{
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: "networkidle0" })
 
@@ -111,8 +112,9 @@ async function generatePdfFromHtml(htmlContent) {
             right: "15mm"
         }
     })
-
-    await browser.close()
+    } finally{
+        await browser.close()
+    }
 
     return pdfBuffer
 }

@@ -8,7 +8,7 @@ const interviewReportModel = require('../models/interviewReport.model');
 async function generateInterviewReportController(req, res) {
     try {
         let resumeText = "";
-
+ 
         // If a resume file was uploaded, parse the PDF
         if (req.file) {
             const parser = new PDFParse({ data: req.file.buffer, verbosity: 0 });
@@ -57,6 +57,7 @@ async function generateInterviewReportController(req, res) {
  * @description Controller to get interview report by interviewId.
  */
 async function getInterviewReportByIdController(req, res) {
+    try {
 
     const { interviewId } = req.params
 
@@ -72,7 +73,13 @@ async function getInterviewReportByIdController(req, res) {
         message: "Interview report fetched successfully.",
         interviewReport
     })
-}
+} catch (error) {
+    console.error("Error fetching interview report:", error);
+    res.status(500).json({
+        message: "Server Error",
+        error: error.message
+    });
+}}
 
 
 /** 
@@ -92,6 +99,7 @@ async function getAllInterviewReportsController(req, res) {
  * @description Controller to generate resume PDF based on user self description, resume and job description.
  */
 async function generateResumePdfController(req, res) {
+    try{
     const { interviewReportId } = req.params
 
     const interviewReport = await interviewReportModel.findById(interviewReportId)
@@ -112,7 +120,13 @@ async function generateResumePdfController(req, res) {
     })
 
     res.send(pdfBuffer)
-}
+} catch (error) {
+    console.error("Error generating resume PDF:", error);
+    res.status(500).json({
+        message: "Server Error",
+        error: error.message
+    });
+}}
 
 module.exports = {
     generateInterviewReportController,
