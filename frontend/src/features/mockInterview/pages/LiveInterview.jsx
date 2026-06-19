@@ -130,7 +130,7 @@ const LiveInterview = () => {
     // Check if any answers exist
     if (!sessionId) {
         alert('Session not found');
-        navigate('/');
+        navigate('/dashboard');
         return;
     }
     
@@ -142,7 +142,7 @@ const LiveInterview = () => {
     } catch (err) {
         console.error('Error completing interview:', err);
         alert(`Failed to complete interview: ${err.message}. Redirecting to dashboard...`);
-        navigate('/');
+        navigate('/dashboard');
     }
     };
 

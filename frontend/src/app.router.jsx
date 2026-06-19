@@ -12,6 +12,8 @@ import LiveInterview from "./features/mockInterview/pages/LiveInterview";
 import MockResults from "./features/mockInterview/pages/MockResults";
 import Activity from "./features/activity/Activity";
 
+import Landing from "./features/landing/pages/Landing";
+
 export const router = createBrowserRouter([
     { 
         path: "/login",
@@ -23,6 +25,10 @@ export const router = createBrowserRouter([
     },
     {
         path: "/",
+        element: <Landing />
+    },
+    {
+        path: "/dashboard",
         element: (
             <Protected>
                 <Layout>

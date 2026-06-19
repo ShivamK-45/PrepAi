@@ -226,7 +226,7 @@ const Activity = () => {
                         </p>
                         <button 
                             className="start-button"
-                            onClick={() => navigate('/')}
+                            onClick={() => navigate('/dashboard')}
                         >
                             Go to Dashboard
                         </button>
